@@ -36,21 +36,28 @@ def main():
     S = 200
     NB = 1000
     NT = 1000
-    with timed(f"Creating {NB}+{NT} instances"):
+    Rep = 10
+
+    with timed(f"creating {NB}+{NT} instances"):
         base = gen_items(NB, K, S)
         test = gen_items(NT, K, S)
-    with timed(f"Creating ItemsSet"):
+
+    with timed(f"creating ItemsSet"):
         iset = binpack_pyo3.ItemsSet(base)
         print(f"  using estimated {iset.memory_used()} bytes for {NB} items of len {K}, {np.mean(np.sum(base, axis=1))} mean items")
-    with timed(f"Checking for {NT} similar items", units=NT*NB):
-        tot = 0
-        for t in test:
-            tot += int(iset.any_fits_into_BF(t))
+
+    with timed(f"{Rep}x checking for {NT} similar items", units=NT*NB*Rep):
+        for _i in range(Rep):
+            tot = 0
+            for t in test:
+                tot += int(iset.any_fits_into_BF(t))
         print(f"  tests found to contain some base itemsets: {tot} / {NT}")
-    with timed(f"Checking for {NT} similar items (rayon parallel)", units=NT*NB):
-        tot = 0
-        for t in test:
-            tot += int(iset.par_any_fits_into_BF(t))
+
+    with timed(f"{Rep}x checking for {NT} similar items (rayon parallel)", units=NT*NB*Rep):
+        for _i in range(Rep):
+            tot = 0
+            for t in test:
+                tot += int(iset.par_any_fits_into_BF(t))
         print(f"  Tests found to contain some base itemsets: {tot} / {NT}")
 
 
