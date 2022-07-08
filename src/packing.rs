@@ -92,7 +92,6 @@ pub fn fits_into_BF(a: &[C], b: &[C]) -> bool {
             let rem = (ni as i32) - moved * (pi as i32);
             d[ni] += 1;
             d[pi] -= moved;
-            debug_assert!(rem != pi as i32);
             if rem > pi as i32 {
                 // Remainder is larger than pi, remember it
                 d[rem as usize] -= 1;

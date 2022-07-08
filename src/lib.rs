@@ -14,7 +14,7 @@ pub use packing::{counts_to_sizes, fits_into_BF, item_sum, sizes_to_counts};
 // Init
 
 #[pymodule]
-fn binpacs(_py: Python, m: &PyModule) -> PyResult<()> {
+fn binpack_pyo3(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ItemsSet>()?;
     Ok(())
 }
@@ -50,6 +50,7 @@ mod test {
         assert_eq!(fits_into_BF(&[0, 0, 0, 1], &[0, 0, 0, 0]), false);
         assert_eq!(fits_into_BF(&[0, 0, 0, 1, 0, 0], &[0, 0, 0, 1, 1, 0]), true);
         assert_eq!(fits_into_BF(&[0, 0, 3], &[0, 0, 0, 2]), false);
+        assert_eq!(fits_into_BF(&[0, 1, 0, 1], &[0, 0, 1, 1]), true);
         assert_sizes_fit_BF(&[], &[], true);
         assert_sizes_fit_BF(&[2, 2, 2], &[3, 3], false);
         assert_sizes_fit_BF(&[1, 2, 3, 4], &[10], true);
