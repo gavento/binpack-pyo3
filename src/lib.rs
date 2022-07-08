@@ -2,13 +2,14 @@ use pyo3::prelude::*;
 
 pub type C = u8;
 
-mod packing;
 mod items_set;
-mod threadpool;
-
 pub use items_set::ItemsSet;
-pub use packing::{counts_to_sizes, sizes_to_counts, fits_into_BF, item_sum};
-pub use threadpool::RayonThreadPool;
+
+mod packing;
+pub use packing::{counts_to_sizes, fits_into_BF, item_sum, sizes_to_counts};
+
+//mod threadpool;
+//pub use threadpool::RayonThreadPool;
 
 // Init
 
