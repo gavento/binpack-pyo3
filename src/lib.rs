@@ -6,7 +6,7 @@ mod items_set;
 pub use items_set::ItemsSet;
 
 mod packing;
-pub use packing::{counts_to_sizes, fits_into_BF, item_sum, sizes_to_counts};
+pub use packing::{counts_to_sizes, fits_into_bestfit, item_sum, sizes_to_counts};
 
 //mod threadpool;
 //pub use threadpool::RayonThreadPool;
@@ -23,12 +23,12 @@ fn binpack_pyo3(_py: Python, m: &PyModule) -> PyResult<()> {
 
 mod test {
     #[allow(unused_imports)]
-    use crate::{counts_to_sizes, fits_into_BF, item_sum, sizes_to_counts, C};
+    use crate::{counts_to_sizes, fits_into_bestfit, item_sum, sizes_to_counts, C};
 
     #[allow(non_snake_case, dead_code)]
     fn assert_sizes_fit_BF(sa: &[C], sb: &[C], expect: bool) {
         assert_eq!(
-            fits_into_BF(&sizes_to_counts(sa), &sizes_to_counts(sb)),
+            fits_into_bestfit(&sizes_to_counts(sa), &sizes_to_counts(sb)),
             expect
         );
     }
@@ -44,13 +44,13 @@ mod test {
 
     #[test]
     #[allow(non_snake_case)]
-    fn test_fits_into_BF() {
-        assert_eq!(fits_into_BF(&[], &[]), true);
-        assert_eq!(fits_into_BF(&[0, 0, 0, 0, 0, 0], &[0, 0, 0, 0, 0, 0]), true);
-        assert_eq!(fits_into_BF(&[0, 0, 0, 1], &[0, 0, 0, 0]), false);
-        assert_eq!(fits_into_BF(&[0, 0, 0, 1, 0, 0], &[0, 0, 0, 1, 1, 0]), true);
-        assert_eq!(fits_into_BF(&[0, 0, 3], &[0, 0, 0, 2]), false);
-        assert_eq!(fits_into_BF(&[0, 1, 0, 1], &[0, 0, 1, 1]), true);
+    fn test_fits_into_bestfit() {
+        assert_eq!(fits_into_bestfit(&[], &[]), true);
+        assert_eq!(fits_into_bestfit(&[0, 0, 0, 0, 0, 0], &[0, 0, 0, 0, 0, 0]), true);
+        assert_eq!(fits_into_bestfit(&[0, 0, 0, 1], &[0, 0, 0, 0]), false);
+        assert_eq!(fits_into_bestfit(&[0, 0, 0, 1, 0, 0], &[0, 0, 0, 1, 1, 0]), true);
+        assert_eq!(fits_into_bestfit(&[0, 0, 3], &[0, 0, 0, 2]), false);
+        assert_eq!(fits_into_bestfit(&[0, 1, 0, 1], &[0, 0, 1, 1]), true);
         assert_sizes_fit_BF(&[], &[], true);
         assert_sizes_fit_BF(&[2, 2, 2], &[3, 3], false);
         assert_sizes_fit_BF(&[1, 2, 3, 4], &[10], true);

@@ -1,7 +1,7 @@
 use rayon::iter::ParallelIterator;
 use rayon::iter::IntoParallelRefIterator;
 use crate::C;
-use crate::{counts_to_sizes, fits_into_BF, sizes_to_counts};
+use crate::{counts_to_sizes, fits_into_bestfit, sizes_to_counts};
 use pyo3::prelude::*;
 
 /// Each element is a set of items (Matej calls them "History"),
@@ -79,18 +79,18 @@ impl ItemsSet {
     }
 
     #[allow(non_snake_case)]
-    pub fn any_fits_into_BF(&self, counts: &PyAny) -> PyResult<bool> {
+    pub fn any_fits_into_bestfit(&self, counts: &PyAny) -> PyResult<bool> {
         let cs: Vec<C> = counts.extract()?;
         assert!(cs.len() < C::MAX as usize);
         assert!(cs.len() == 0 || cs[0] == 0);
-        Ok(self.0.iter().any(|c| fits_into_BF(c, &cs)))
+        Ok(self.0.iter().any(|c| fits_into_bestfit(c, &cs)))
     }
 
     #[allow(non_snake_case)]
-    pub fn par_any_fits_into_BF(&self, counts: &PyAny) -> PyResult<bool> {
+    pub fn par_any_fits_into_bestfit(&self, counts: &PyAny) -> PyResult<bool> {
         let cs: Vec<C> = counts.extract()?;
         assert!(cs.len() < C::MAX as usize);
         assert!(cs.len() == 0 || cs[0] == 0);
-        Ok(self.0.par_iter().any(|c| fits_into_BF(c, &cs)))
+        Ok(self.0.par_iter().any(|c| fits_into_bestfit(c, &cs)))
     }
 }
