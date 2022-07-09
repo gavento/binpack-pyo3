@@ -8,9 +8,6 @@ pub use items_set::ItemsSet;
 mod packing;
 pub use packing::{counts_to_sizes, fits_into_bestfit, item_sum, sizes_to_counts};
 
-//mod threadpool;
-//pub use threadpool::RayonThreadPool;
-
 // Init
 
 #[pymodule]
