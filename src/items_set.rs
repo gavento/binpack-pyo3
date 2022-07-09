@@ -1,18 +1,19 @@
-use rayon::iter::ParallelIterator;
-use rayon::iter::IntoParallelRefIterator;
+use crate::packing_branching::fits_into_branching;
+use crate::packing_common::{counts_to_sizes, sizes_to_counts};
 use crate::C;
-use crate::{counts_to_sizes, fits_into_bestfit, sizes_to_counts};
 use pyo3::prelude::*;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
 
 /// Each element is a set of items (Matej calls them "History"),
 /// encoded as counts of each size: the number of items of
 /// size `size` is `item_set.0[size]`
 #[pyclass]
 #[derive(Debug, Clone, Default)]
-pub struct ItemsSet(Vec<Vec<C>>);
+pub struct ItemSets(Vec<Vec<C>>);
 
 #[pymethods]
-impl ItemsSet {
+impl ItemSets {
     /// Creates a new instance for the given item set
     /// (given as an iterable of count vectors)
     #[new]
@@ -78,19 +79,32 @@ impl ItemsSet {
                 .sum::<usize>();
     }
 
-    #[allow(non_snake_case)]
-    pub fn any_fits_into_bestfit(&self, counts: &PyAny) -> PyResult<bool> {
+    /// See if any of the stored item sets fit into the given `counts`.
+    /// 
+    /// `par` invokes parallelism, `branchings=0` means best-fit, higher values
+    /// do a partial exhaustive search limiting the branch count (with best-fit afterwards).
+    #[args(trim_upper = "true", par = "false", branchings = "0")]
+    #[pyo3(text_signature = "($self, counts, /, trim_upper=True, par=False, branchings=0)")]
+    pub fn any_fits_into_counts(
+        &self,
+        counts: &PyAny,
+        trim_upper: bool,
+        par: bool,
+        branchings: usize,
+    ) -> PyResult<bool> {
         let cs: Vec<C> = counts.extract()?;
         assert!(cs.len() < C::MAX as usize);
         assert!(cs.len() == 0 || cs[0] == 0);
-        Ok(self.0.iter().any(|c| fits_into_bestfit(c, &cs)))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn par_any_fits_into_bestfit(&self, counts: &PyAny) -> PyResult<bool> {
-        let cs: Vec<C> = counts.extract()?;
-        assert!(cs.len() < C::MAX as usize);
-        assert!(cs.len() == 0 || cs[0] == 0);
-        Ok(self.0.par_iter().any(|c| fits_into_bestfit(c, &cs)))
+        if par {
+            Ok(self
+                .0
+                .par_iter()
+                .any(|c| fits_into_branching(c, &cs, branchings, trim_upper)))
+        } else {
+            Ok(self
+                .0
+                .iter()
+                .any(|c| fits_into_branching(c, &cs, branchings, trim_upper)))
+        }
     }
 }
