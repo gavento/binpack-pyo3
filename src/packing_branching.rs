@@ -1,5 +1,5 @@
 use crate::packing_bestfit::fits_into_bestfit_internal;
-use crate::packing_common::{item_sum, prep_diff, trim_upper_bins};
+use crate::packing_common::{item_sum, prep_diff};
 use crate::C;
 use std::cmp::min;
 
@@ -19,75 +19,82 @@ use std::cmp::min;
 /// are irellevant and thus erased. `sd` track the sum of the item
 /// sizes and is updated by forgotten negative bins, so we can stop if
 /// it is ever positive.
-pub fn fits_into_branching(a: &[C], b: &[C], branchings: usize, trim_upper: bool) -> bool {
+pub fn fits_into_branching(a: &[C], b: &[C], branchings: usize) -> bool {
     let mut d = prep_diff(a, b);
     let sd = item_sum(&d) as i32;
-    fits_into_branching_internal(&mut d, sd, 0, 0, branchings, trim_upper)
+    if branchings <= 1 {
+        fits_into_bestfit_internal(&mut d, sd, true)
+    } else {
+        fits_into_branching_internal(&mut d, sd, branchings)
+    }
 }
 
-/// Recursive, `d` may be edited in any way.
-pub fn fits_into_branching_internal(
-    d: &mut [i32],
-    sd: i32,
-    pi0: usize,
-    ni0: usize,
-    branchings: usize,
-    trim_upper: bool,
-) -> bool {
-    if branchings == 0 {
-        return fits_into_bestfit_internal(d, sd, trim_upper);
+/// Recursive; `d` may be edited in any way.
+/// Warning: recurses not just for branchings but also when an unique `(hpos->hneg)` update is found.
+pub fn fits_into_branching_internal(d: &mut [i32], sd: i32, branchings: usize) -> bool {
+    if branchings <= 1 {
+        // trim_upper_bins is already done if at least one branching happened
+        return fits_into_bestfit_internal(d, sd, false);
     }
 
-    unimplemented!();
-    let mut ni = ni0;
     let mut sd = sd;
-    for pi in pi0..d.len() {
-        debug_assert_eq!(sd, item_sum(d) as i32);
-        if trim_upper {
-            if !trim_upper_bins(d) {
-                return false;
-            }
-            debug_assert_eq!(sd, item_sum(d) as i32);
-        }
-        // Check if total volume fits
-        if sd > 0 {
-            return false;
-        }
-        // pi points to a negative number -> forget it and remove from the sum
-        if d[pi] < 0 {
-            sd -= (pi as i32) * d[pi];
-            d[pi] = 0;
-        }
-        // pi points to items in need of packing -> resolve with fit to all highers
-        while d[pi] > 0 {
-            debug_assert!(item_sum(&d) as i32 == sd);
-
-            // Find next negative count, return false if all counts are non-neg
-            while d[ni] >= 0 {
-                ni += 1;
-                if ni >= d.len() {
-                    assert!(sd > 0);
+    loop {
+        // filter lower negatives and check sd <= 0
+        let lpos = d.iter().rposition(|x| *x > 0);
+        let lneg = d.iter().rposition(|x| *x < 0);
+        match (lpos, lneg) {
+            (Some(lp), Some(ln)) if lp > ln => {
+                sd -= d[ln] * ln as i32;
+                d[ln] = 0;
+                debug_assert_eq!(item_sum(&d) as i32, sd);
+                if sd > 0 {
                     return false;
                 }
+                // Another loop to check for more low negs
+                continue;
             }
-            debug_assert!(ni > pi);
-            // How many of pi pieces fit into a ni slot
-            let moved = min(d[pi], (ni as i32) / (pi as i32));
-            debug_assert!(moved > 0);
-            // Remaining size of the ni slot
-            let rem = (ni as i32) - moved * (pi as i32);
-            d[ni] += 1;
-            d[pi] -= moved;
-            if rem > pi as i32 {
-                // Remainder is larger than pi, remember it
-                d[rem as usize] -= 1;
-                ni = min(rem as usize, ni);
-            } else {
-                // Remainder is smaller than pi, forget it and remove it from sd
-                sd += rem;
+            _ => {}
+        };
+
+        // find upper non-zero bins
+        let hpos = d.iter().rposition(|x| *x > 0);
+        let hneg = d.iter().rposition(|x| *x < 0);
+        match (hpos, hneg) {
+            // Trivially fits, all bins non-positive
+            (None, _) => return true,
+            // Only non-zero bin is positive, fail
+            (Some(_), None) => return false,
+            // Largest non-zero bin positive, fail
+            (Some(hp), Some(hn)) if hp > hn => return false,
+            // Largest non-zero bin negative, carry on
+            (Some(hp), Some(hn)) => {
+                assert!(hp < hn);
+                // collect all negative values between hp and hn (incl.)
+                let negs: Vec<usize> = d[hp..]
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, x)| if *x < 0 { Some(i + hp) } else { None })
+                    .collect();
+                debug_assert!(negs.len() > 0);
+                debug_assert!(branchings > 1);
+                // limit to how many branches we have, lower negs first
+                let negs_b = &negs[..min(branchings, negs.len())];
+                let part = (branchings + negs_b.len() - 1) / negs_b.len();
+                let mut brs = branchings;
+                for neg in negs_b {
+                    debug_assert!(*neg > hp);
+                    let mut d2: Vec<i32> = d.into();
+                    d2[*neg] += 1;
+                    d2[hp] -= 1;
+                    d2[*neg - hp] -= 1;
+                    debug_assert_eq!(item_sum(&d2) as i32, sd);
+                    if fits_into_branching_internal(&mut d2, sd, min(brs, part)) {
+                        return true;
+                    }
+                    brs -= min(brs, part);
+                }
+                return false;
             }
         }
     }
-    assert!(sd == 0);
-    return true;
 }

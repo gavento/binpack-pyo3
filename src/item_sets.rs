@@ -1,3 +1,4 @@
+use crate::packing_bestfit::fits_into_bestfit;
 use crate::packing_branching::fits_into_branching;
 use crate::packing_common::{counts_to_sizes, sizes_to_counts};
 use crate::C;
@@ -80,7 +81,7 @@ impl ItemSets {
     }
 
     /// See if any of the stored item sets fit into the given `counts`.
-    /// 
+    ///
     /// `par` invokes parallelism, `branchings=0` means best-fit, higher values
     /// do a partial exhaustive search limiting the branch count (with best-fit afterwards).
     #[args(trim_upper = "true", par = "false", branchings = "0")]
@@ -95,16 +96,27 @@ impl ItemSets {
         let cs: Vec<C> = counts.extract()?;
         assert!(cs.len() < C::MAX as usize);
         assert!(cs.len() == 0 || cs[0] == 0);
-        if par {
-            Ok(self
-                .0
-                .par_iter()
-                .any(|c| fits_into_branching(c, &cs, branchings, trim_upper)))
+        if branchings == 0 {
+            if par {
+                Ok(self
+                    .0
+                    .par_iter()
+                    .any(|c| fits_into_bestfit(c, &cs, trim_upper)))
+            } else {
+                Ok(self.0.iter().any(|c| fits_into_bestfit(c, &cs, trim_upper)))
+            }
         } else {
-            Ok(self
-                .0
-                .iter()
-                .any(|c| fits_into_branching(c, &cs, branchings, trim_upper)))
+            if par {
+                Ok(self
+                    .0
+                    .par_iter()
+                    .any(|c| fits_into_branching(c, &cs, branchings)))
+            } else {
+                Ok(self
+                    .0
+                    .iter()
+                    .any(|c| fits_into_branching(c, &cs, branchings)))
+            }
         }
     }
 }

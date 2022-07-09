@@ -35,7 +35,7 @@ def main():
     K = 40
     S = 200
     NB = 1000
-    NT = 100
+    NT = 1000
     Rep = 1
 
     with timed(f"creating {NB}+{NT} instances"):
@@ -54,11 +54,13 @@ def main():
                     tot += int(iset.any_fits_into_counts(t, **kwargs))
             print(f"  tests found to contain any base itemset: {tot} out of {NT}")
 
-    tst("looking for base items fitting into test sets")
     tst("looking for base items fitting into test sets (trim_upper=False)", trim_upper=False)
+    tst("looking for base items fitting into test sets")
+    tst("looking for base items fitting into test sets (par=True)", par=True)
     tst("looking for base items fitting into test sets (branchings=10)", branchings=10)
     tst("looking for base items fitting into test sets (branchings=100)", branchings=100)
-    tst("looking for base items fitting into test sets (par=True)", par=True)
+    tst("looking for base items fitting into test sets (branchings=1000000)", branchings=1000000)
+    tst("looking for base items fitting into test sets (branchings=1000000, par=True)", branchings=1000000, par=True)
 
 if __name__ == '__main__':
     main()
