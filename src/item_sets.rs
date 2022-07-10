@@ -1,3 +1,4 @@
+use crate::packing_bestfit::fits_into_bestfit;
 use crate::packing_branching::fits_into_branching;
 use crate::packing_common::{counts_to_sizes, sizes_to_counts};
 use crate::C;
@@ -81,7 +82,7 @@ impl ItemSets {
 
     /// Check if any of the stored item sets fit into the item set given by `counts`.
     ///
-    /// `par` invokes parallelism (set ), `branching=0` means best-fit, higher values
+    /// `par` invokes parallelism, `branching=0` means best-fit, higher values
     /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
     #[args(par = false, branching = 0)]
     #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
@@ -96,7 +97,7 @@ impl ItemSets {
 
     /// Check if the item set given by `counts` fits into any of the stored item sets.
     ///
-    /// `par` invokes parallelism (set ), `branching=0` means best-fit, higher values
+    /// `par` invokes parallelism, `branching=0` means best-fit, higher values
     /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
     #[args(par = false, branching = 0)]
     #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
@@ -111,7 +112,7 @@ impl ItemSets {
 
     /// Check if all of the stored item sets fit into the item set given by `counts`.
     ///
-    /// `par` invokes parallelism (set ), `branching=0` means best-fit, higher values
+    /// `par` invokes parallelism, `branching=0` means best-fit, higher values
     /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
     #[args(par = false, branching = 0)]
     #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
@@ -126,7 +127,7 @@ impl ItemSets {
 
     /// Check if the item set given by `counts` fits into all of the stored item sets.
     ///
-    /// `par` invokes parallelism (set ), `branching=0` means best-fit, higher values
+    /// `par` invokes parallelism, `branching=0` means best-fit, higher values
     /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
     #[args(par = false, branching = 0)]
     #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
@@ -137,6 +138,21 @@ impl ItemSets {
         branching: usize,
     ) -> PyResult<bool> {
         self.all_f_helper(counts, par, |sc, gc| fits_into_branching(gc, sc, branching))
+    }
+
+    /// Check if any of the stored item sets fit into the item set given by `counts` (for benchmark only).
+    ///
+    /// This `par` invokes parallelism (set ), with `trim_upper=True` first looks for any necessary packing of
+    /// largest items into the only one larger bins, repeatedly.
+    #[args(par = false, trim_upper = false)]
+    #[pyo3(text_signature = "($self, counts, /, par=False, trim_upper=False)")]
+    pub fn bestfit_any_fit_into_given(
+        &self,
+        counts: &PyAny,
+        par: bool,
+        trim_upper: bool,
+    ) -> PyResult<bool> {
+        self.any_f_helper(counts, par, |sc, gc| fits_into_bestfit(sc, gc, trim_upper))
     }
 }
 

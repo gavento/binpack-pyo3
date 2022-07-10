@@ -57,12 +57,14 @@ def main():
                     tot += int(f(t, **kwargs))
             print(f"  matching test item sets: {tot} out of {NT}")
 
+    tst("bestfit_any_fit_into_given(trim_upper=False)", fname="bestfit_any_fit_into_given", trim_upper=False)
+
     tst("any_fit_into_given")
     tst("any_fit_into_given(par=True)", par=True)
     tst("any_fit_into_given(branchings=10)", branching=10)
+    tst("any_fit_into_given(branchings=10, par=True)", branching=10, par=True)
     tst("any_fit_into_given(branchings=100)", branching=100)
     tst("any_fit_into_given(branchings=1000000)", branching=1000000)
-    tst("any_fit_into_given(branchings=1000000, par=True)", branching=1000000, par=True)
 
     tst("all_fit_into_given(par=True)", fname="all_fit_into_given", par=True)
     tst("given_fits_into_any(par=True)", fname="given_fits_into_any", par=True)
