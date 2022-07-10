@@ -61,29 +61,33 @@ Running with `RAYON_NUM_THREADS=4 python3.9 bench.py`:
 Running creating ItemsSet ...
   stored item sets have on average 19.3521 items
   using estimated 793240 bytes for 10000 items of len 40
-  ... creating ItemsSet took 0.0487869 s
+  ... creating ItemsSet took 0.0457718 s
+
+Running bestfit_any_fit_into_given(trim_upper=False) ...
+  matching test item sets: 875 out of 1000
+  ... bestfit_any_fit_into_given(trim_upper=False) took 0.394095 s for 10000000 pairs (0.0394095 us / pair)
 
 Running any_fit_into_given ...
   matching test item sets: 894 out of 1000
-  ... any_fit_into_given took 0.418926 s for 10000000 pairs (0.0418926 us / pair)
+  ... any_fit_into_given took 0.412942 s for 10000000 pairs (0.0412942 us / pair)
 
 Running any_fit_into_given(par=True) ...
   matching test item sets: 894 out of 1000
-  ... any_fit_into_given(par=True) took 0.12529 s for 10000000 pairs (0.012529 us / pair)
+  ... any_fit_into_given(par=True) took 0.124982 s for 10000000 pairs (0.0124982 us / pair)
 
 Running any_fit_into_given(branchings=10) ...
   matching test item sets: 961 out of 1000
-  ... any_fit_into_given(branchings=10) took 0.322826 s for 10000000 pairs (0.0322826 us / pair)
+  ... any_fit_into_given(branchings=10) took 0.328511 s for 10000000 pairs (0.0328511 us / pair)
+
+Running any_fit_into_given(branchings=10, par=True) ...
+  matching test item sets: 961 out of 1000
+  ... any_fit_into_given(branchings=10, par=True) took 0.103553 s for 10000000 pairs (0.0103553 us / pair)
 
 Running any_fit_into_given(branchings=100) ...
   matching test item sets: 965 out of 1000
-  ... any_fit_into_given(branchings=100) took 0.485807 s for 10000000 pairs (0.0485807 us / pair)
+  ... any_fit_into_given(branchings=100) took 0.476524 s for 10000000 pairs (0.0476524 us / pair)
 
 Running any_fit_into_given(branchings=1000000) ...
   matching test item sets: 965 out of 1000
-  ... any_fit_into_given(branchings=1000000) took 1.78835 s for 10000000 pairs (0.178835 us / pair)
-
-Running any_fit_into_given(branchings=1000000, par=True) ...
-  matching test item sets: 965 out of 1000
-  ... any_fit_into_given(branchings=1000000, par=True) took 2.01882 s for 10000000 pairs (0.201882 us / pair)
+  ... any_fit_into_given(branchings=1000000) took 1.65671 s for 10000000 pairs (0.165671 us / pair)
 ```
