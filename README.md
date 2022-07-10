@@ -1,5 +1,8 @@
 # Bin packing storage and algorithms
 
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/gavento/binpack-pyo3)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/gavento/binpack-pyo3/CI)
+
 Written in Rust with a Python interface through [PyO3](https://pyo3.rs/).
 Python wheels available in [releases](https://github.com/gavento/binpack-pyo3/releases).
 
@@ -14,7 +17,7 @@ and for fast comparison between a given item set and the entire collection (savi
 Python->Rust calls and allowing [Rayon](https://docs.rs/rayon/latest/rayon/) parallelism
 of queries).
 
-The item sets are internally representex
+The item sets are internally represented
 as an array *counts* of items of every size: `c[i]` is the number of items of size `i`, `c[0]=0` as a convention.
 Use `ItemSets.push_counts()`, `ItemSets[i]` and `ItemSets.all_counts()` to add item set, read i-th item set or get
 all item sets (all represented as counts). Removing of sets is not supported now (but could be easily added).
