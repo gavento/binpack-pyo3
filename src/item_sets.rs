@@ -1,4 +1,3 @@
-use crate::packing_bestfit::fits_into_bestfit;
 use crate::packing_branching::fits_into_branching;
 use crate::packing_common::{counts_to_sizes, sizes_to_counts};
 use crate::C;
@@ -80,43 +79,93 @@ impl ItemSets {
                 .sum::<usize>();
     }
 
-    /// See if any of the stored item sets fit into the given `counts`.
+    /// Check if any of the stored item sets fit into the item set given by `counts`.
     ///
-    /// `par` invokes parallelism, `branchings=0` means best-fit, higher values
-    /// do a partial exhaustive search limiting the branch count (with best-fit afterwards).
-    #[args(trim_upper = "true", par = "false", branchings = "0")]
-    #[pyo3(text_signature = "($self, counts, /, trim_upper=True, par=False, branchings=0)")]
-    pub fn any_fits_into_counts(
+    /// `par` invokes parallelism (set ), `branching=0` means best-fit, higher values
+    /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
+    #[args(par = false, branching = 0)]
+    #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
+    pub fn any_fit_into_given(
         &self,
         counts: &PyAny,
-        trim_upper: bool,
         par: bool,
-        branchings: usize,
+        branching: usize,
     ) -> PyResult<bool> {
-        let cs: Vec<C> = counts.extract()?;
-        assert!(cs.len() < C::MAX as usize);
-        assert!(cs.len() == 0 || cs[0] == 0);
-        if branchings == 0 {
-            if par {
-                Ok(self
-                    .0
-                    .par_iter()
-                    .any(|c| fits_into_bestfit(c, &cs, trim_upper)))
-            } else {
-                Ok(self.0.iter().any(|c| fits_into_bestfit(c, &cs, trim_upper)))
-            }
+        self.any_f_helper(counts, par, |sc, gc| fits_into_branching(sc, gc, branching))
+    }
+
+    /// Check if the item set given by `counts` fits into any of the stored item sets.
+    ///
+    /// `par` invokes parallelism (set ), `branching=0` means best-fit, higher values
+    /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
+    #[args(par = false, branching = 0)]
+    #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
+    pub fn given_fits_into_any(
+        &self,
+        counts: &PyAny,
+        par: bool,
+        branching: usize,
+    ) -> PyResult<bool> {
+        self.any_f_helper(counts, par, |sc, gc| fits_into_branching(gc, sc, branching))
+    }
+
+    /// Check if all of the stored item sets fit into the item set given by `counts`.
+    ///
+    /// `par` invokes parallelism (set ), `branching=0` means best-fit, higher values
+    /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
+    #[args(par = false, branching = 0)]
+    #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
+    pub fn all_fit_into_given(
+        &self,
+        counts: &PyAny,
+        par: bool,
+        branching: usize,
+    ) -> PyResult<bool> {
+        self.all_f_helper(counts, par, |sc, gc| fits_into_branching(sc, gc, branching))
+    }
+
+    /// Check if the item set given by `counts` fits into all of the stored item sets.
+    ///
+    /// `par` invokes parallelism (set ), `branching=0` means best-fit, higher values
+    /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
+    #[args(par = false, branching = 0)]
+    #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
+    pub fn given_fits_into_all(
+        &self,
+        counts: &PyAny,
+        par: bool,
+        branching: usize,
+    ) -> PyResult<bool> {
+        self.all_f_helper(counts, par, |sc, gc| fits_into_branching(gc, sc, branching))
+    }
+}
+
+impl ItemSets {
+    fn any_f_helper<F>(&self, counts: &PyAny, par: bool, f: F) -> PyResult<bool>
+    where
+        F: Fn(&[C], &[C]) -> bool + Sync,
+    {
+        let gc: Vec<C> = counts.extract()?;
+        assert!(gc.len() < C::MAX as usize);
+        assert!(gc.len() == 0 || gc[0] == 0);
+        if par {
+            Ok(self.0.par_iter().any(|sc| f(sc, &gc)))
         } else {
-            if par {
-                Ok(self
-                    .0
-                    .par_iter()
-                    .any(|c| fits_into_branching(c, &cs, branchings)))
-            } else {
-                Ok(self
-                    .0
-                    .iter()
-                    .any(|c| fits_into_branching(c, &cs, branchings)))
-            }
+            Ok(self.0.iter().any(|sc| f(sc, &gc)))
+        }
+    }
+
+    fn all_f_helper<F>(&self, counts: &PyAny, par: bool, f: F) -> PyResult<bool>
+    where
+        F: Fn(&[C], &[C]) -> bool + Sync,
+    {
+        let gc: Vec<C> = counts.extract()?;
+        assert!(gc.len() < C::MAX as usize);
+        assert!(gc.len() == 0 || gc[0] == 0);
+        if par {
+            Ok(self.0.par_iter().all(|sc| f(sc, &gc)))
+        } else {
+            Ok(self.0.iter().all(|sc| f(sc, &gc)))
         }
     }
 }

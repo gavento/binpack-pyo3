@@ -27,40 +27,46 @@ def timed(msg, units=1):
     t1 = time.time()
     t = t1 - t0
     if units > 1:
-        print(f"  ... {msg} took {t:.6} s for {units} units ({t / units * 1000000:.6} us / unit)")
+        print(f"  ... {msg} took {t:.6} s for {units} pairs ({t / units * 1000000:.6} us / pair)")
     else:
         print(f"  ... {msg} took {t:.6} s")
 
 def main():
     K = 40
     S = 200
-    NB = 1000
+    NB = 10000
     NT = 1000
     Rep = 1
 
+    np.random.seed(1)
     with timed(f"creating {NB}+{NT} instances"):
         base = gen_items(NB, K, S)
         test = gen_items(NT, K, S)
 
     with timed(f"creating ItemsSet"):
         iset = binpack_pyo3.ItemSets(base)
-        print(f"  using estimated {iset.memory_used()} bytes for {NB} items of len {K}, {np.mean(np.sum(base, axis=1))} mean items")
+        print(f"  stored item sets have on average {np.mean(np.sum(base, axis=1))} items")
+        print(f"  using estimated {iset.memory_used()} bytes for {NB} items of len {K}")
 
-    def tst(msg, **kwargs):
-        with timed(f"{Rep}x {msg}", units=NT*NB*Rep):
+    def tst(msg, fname="any_fit_into_given", **kwargs):
+        with timed(f"{msg}", units=NT*NB*Rep):
             for _i in range(Rep):
                 tot = 0
+                f = getattr(iset, fname)
                 for t in test:
-                    tot += int(iset.any_fits_into_counts(t, **kwargs))
-            print(f"  tests found to contain any base itemset: {tot} out of {NT}")
+                    tot += int(f(t, **kwargs))
+            print(f"  matching test item sets: {tot} out of {NT}")
 
-    tst("looking for base items fitting into test sets (trim_upper=False)", trim_upper=False)
-    tst("looking for base items fitting into test sets")
-    tst("looking for base items fitting into test sets (par=True)", par=True)
-    tst("looking for base items fitting into test sets (branchings=10)", branchings=10)
-    tst("looking for base items fitting into test sets (branchings=100)", branchings=100)
-    tst("looking for base items fitting into test sets (branchings=1000000)", branchings=1000000)
-    tst("looking for base items fitting into test sets (branchings=1000000, par=True)", branchings=1000000, par=True)
+    tst("any_fit_into_given")
+    tst("any_fit_into_given(par=True)", par=True)
+    tst("any_fit_into_given(branchings=10)", branching=10)
+    tst("any_fit_into_given(branchings=100)", branching=100)
+    tst("any_fit_into_given(branchings=1000000)", branching=1000000)
+    tst("any_fit_into_given(branchings=1000000, par=True)", branching=1000000, par=True)
+
+    tst("all_fit_into_given(par=True)", fname="all_fit_into_given", par=True)
+    tst("given_fits_into_any(par=True)", fname="given_fits_into_any", par=True)
+    tst("given_fits_into_all(par=True)", fname="given_fits_into_all", par=True)
 
 if __name__ == '__main__':
     main()
