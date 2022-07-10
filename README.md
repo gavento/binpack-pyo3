@@ -49,6 +49,8 @@ Parallelism may benefit from using fewer threads than the number of cores (Rayon
 
 ## Building
 
+First of all, you can skip building and just install a released wheel with `pip install https://github.com/gavento/binpack-pyo3/releases/download/v0.3.1/binpack_pyo3-0.3.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl` - update the URL with the right python version from the [latest release](https://github.com/gavento/binpack-pyo3/releases/latest)).
+
 Test with `cargo test`. Python package builds are using [maturin](https://maturin.rs/): `maturin develop`
 creates debug builds and install them (virtual env recommended), `maturin buid` builds a release package.
 The release builds are created in [Github CI](https://github.com/gavento/binpack-pyo3/blob/main/.github/workflows/CI.yml).
