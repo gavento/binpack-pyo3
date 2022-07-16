@@ -55,6 +55,25 @@ Test with `cargo test`. Python package builds are using [maturin](https://maturi
 creates debug builds and install them (virtual env recommended), `maturin buid` builds a release package.
 The release builds are created in [Github CI](https://github.com/gavento/binpack-pyo3/blob/main/.github/workflows/CI.yml).
 
+## Example usage
+
+```shell
+pip install https://github.com/gavento/binpack-pyo3/releases/download/v0.3.2/binpack_pyo3-0.3.2-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl
+```
+
+```python
+import binpack_pyo3
+s = binpack_pyo3.ItemSets() # Empty collection
+s.push_sizes([3,3,3,4]) # Insert as list of item sizes
+s.push_counts([0,1,0,0,3]) # Insert as vector of counts of items of every size (from 0), here items [4,4,4,1]
+assert s.s2c([4,4,4,1]) == [0,1,0,0,3] # Quick conversion counts<->sizes
+print(s.all_counts()) # List all as vectors of counts
+print(s.memory_used()) # Estimate bytes used
+assert s.any_fit_into_given([0,0,0,0,0,1,0,0,1]) == True # 2nd fits into [5,8]
+assert s.all_fit_into_given([0,0,0,0,0,1,0,0,1]) == False # 1st does not fit into [5,8]
+assert s.given_fits_into_how_many(s.s2c([2,3,3,3,1])) == 1 # Counting, with conversion
+```
+
 ## Benchmark on AMD EPYC 7302
 
 Running with `RAYON_NUM_THREADS=4 python3.9 bench.py`:
