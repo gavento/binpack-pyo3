@@ -11,6 +11,7 @@ use rayon::iter::ParallelIterator;
 /// size `size` is `item_set.0[size]`
 #[pyclass]
 #[derive(Debug, Clone, Default)]
+#[pyo3(text_signature = "(all_counts=None, /, all_sizes=None)")]
 pub struct ItemSets(Vec<Vec<C>>);
 
 #[pymethods]
@@ -18,12 +19,39 @@ impl ItemSets {
     /// Creates a new instance for the given item set
     /// (given as an iterable of count vectors)
     #[new]
-    pub fn new(items_set: &pyo3::types::PySequence) -> PyResult<Self> {
+    #[args(all_counts = "None", all_sizes = "None")]
+    pub fn new(
+        all_counts: Option<&pyo3::types::PySequence>,
+        all_sizes: Option<&pyo3::types::PySequence>,
+    ) -> PyResult<Self> {
         let mut s: Self = Default::default();
-        for counts in items_set.iter()? {
-            s.push_counts(counts?)?;
+        if let Some(cs) = all_counts {
+            for counts in cs.iter()? {
+                s.push_counts(counts?)?;
+            }
+        }
+        if let Some(ss) = all_sizes {
+            for sizes in ss.iter()? {
+                s.push_sizes(sizes?)?;
+            }
         }
         Ok(s)
+    }
+
+    /// Convert count vector into sizes vector
+    #[staticmethod]
+    #[pyo3(text_signature = "(counts)")]
+    pub fn c2s(py: Python, counts: &PyAny) -> PyResult<PyObject> {
+        let cs: Vec<C> = counts.extract()?;
+        Ok(counts_to_sizes(&cs).into_py(py))
+    }
+
+    /// Convert sizes vector into counts vector
+    #[staticmethod]
+    #[pyo3(text_signature = "(sizes)")]
+    pub fn s2c(py: Python, sizes: &PyAny) -> PyResult<PyObject> {
+        let ss: Vec<C> = sizes.extract()?;
+        Ok(sizes_to_counts(&ss).into_py(py))
     }
 
     /// Insert new item given by counts
@@ -39,7 +67,9 @@ impl ItemSets {
     pub fn push_sizes(&mut self, sizes: &PyAny) -> PyResult<()> {
         let ss: Vec<C> = sizes.extract()?;
         assert!(ss.len() < C::MAX as usize);
-        self.0.push(sizes_to_counts(&ss));
+        let cs = sizes_to_counts(&ss);
+        assert_eq!(cs[0], 0, "Items of size 0 not allowed.");
+        self.0.push(cs);
         Ok(())
     }
 
@@ -63,7 +93,7 @@ impl ItemSets {
     }
 
     pub fn __repr__(&self) -> String {
-        format!("ItemsSet({:?})", self.0)
+        format!("ItemsSet(all_counts={:?})", self.0)
     }
 
     /// Return an estimate of the memory used by the ItemsSet.
@@ -140,6 +170,36 @@ impl ItemSets {
         self.all_f_helper(counts, par, |sc, gc| fits_into_branching(gc, sc, branching))
     }
 
+    /// Count how many of the stored item sets fit into the item set given by `counts`.
+    ///
+    /// `par` invokes parallelism, `branching=0` means best-fit, higher values
+    /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
+    #[args(par = false, branching = 0)]
+    #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
+    pub fn how_many_fit_into_given(
+        &self,
+        counts: &PyAny,
+        par: bool,
+        branching: usize,
+    ) -> PyResult<usize> {
+        self.count_f_helper(counts, par, |sc, gc| fits_into_branching(sc, gc, branching))
+    }
+
+    /// Count into how many of the stored item sets does the item set given by `counts` fit.
+    ///
+    /// `par` invokes parallelism, `branching=0` means best-fit, higher values
+    /// do a partial exhaustive search limiting the branch count (switching to best-fit afterwards).
+    #[args(par = false, branching = 0)]
+    #[pyo3(text_signature = "($self, counts, /, par=False, branching=0)")]
+    pub fn given_fits_into_how_many(
+        &self,
+        counts: &PyAny,
+        par: bool,
+        branching: usize,
+    ) -> PyResult<usize> {
+        self.count_f_helper(counts, par, |sc, gc| fits_into_branching(gc, sc, branching))
+    }
+
     /// Check if any of the stored item sets fit into the item set given by `counts` (for benchmark only).
     ///
     /// This `par` invokes parallelism (set ), with `trim_upper=True` first looks for any necessary packing of
@@ -157,6 +217,20 @@ impl ItemSets {
 }
 
 impl ItemSets {
+    fn count_f_helper<F>(&self, counts: &PyAny, par: bool, f: F) -> PyResult<usize>
+    where
+        F: Fn(&[C], &[C]) -> bool + Sync,
+    {
+        let gc: Vec<C> = counts.extract()?;
+        assert!(gc.len() < C::MAX as usize);
+        assert!(gc.len() == 0 || gc[0] == 0);
+        if par {
+            Ok(self.0.par_iter().filter(|sc| f(sc, &gc)).count())
+        } else {
+            Ok(self.0.iter().filter(|sc| f(sc, &gc)).count())
+        }
+    }
+
     fn any_f_helper<F>(&self, counts: &PyAny, par: bool, f: F) -> PyResult<bool>
     where
         F: Fn(&[C], &[C]) -> bool + Sync,

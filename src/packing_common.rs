@@ -17,10 +17,12 @@ pub fn counts_to_sizes(counts: &[C]) -> Vec<C> {
 
 /// Conver a count list of item sizes into a count vector
 pub fn sizes_to_counts(sizes: &[C]) -> Vec<C> {
+    assert!(sizes.len() < C::MAX as usize);
     let m = *sizes.iter().max().unwrap_or(&0);
     let mut res = vec![0; m as usize + 1];
-    for s in sizes {
-        res[*s as usize] += 1;
+    for &s in sizes {
+        assert!(s != 0);
+        res[s as usize] += 1;
     }
     res
 }
