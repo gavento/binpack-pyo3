@@ -71,7 +71,7 @@ def main():
     tst("any_fit_into_given(branchings=10)", branching=10)
     tst("any_fit_into_given(branchings=10, par=True)", branching=10, par=True)
     tst("any_fit_into_given(branchings=100)", branching=100)
-    tst("any_fit_into_given(branchings=1000000)", branching=1000000)
+    tst("any_fit_into_given(branchings=10000)", branching=10000)
 
     print("\n## Other single match (and single-mismatch) finding functions")
 
@@ -84,10 +84,10 @@ def main():
     tst("given_fits_into_how_many", fname="given_fits_into_how_many")
     tst("given_fits_into_how_many(par=True)", fname="given_fits_into_how_many", par=True)
     tst("given_fits_into_how_many(branchings=10)", fname="given_fits_into_how_many", branching=10)
-    tst("given_fits_into_how_many(branchings=10, par=True)", fname="given_fits_into_how_many", par=True, branching=10)
     tst("given_fits_into_how_many(branchings=100)", fname="given_fits_into_how_many", branching=100)
-    tst("given_fits_into_how_many(branchings=1000)", fname="given_fits_into_how_many", branching=1000)
-    tst("given_fits_into_how_many(branchings=10000)", fname="given_fits_into_how_many", branching=10000)
+    tst("given_fits_into_how_many(branchings=100, par=True)", fname="given_fits_into_how_many", branching=100, par=True)
+    tst("given_fits_into_how_many(branchings=1000, par=True)", fname="given_fits_into_how_many", branching=1000, par=True)
+    tst("given_fits_into_how_many(branchings=10000, par=True)", fname="given_fits_into_how_many", branching=10000, par=True)
 
 if __name__ == '__main__':
     main()
