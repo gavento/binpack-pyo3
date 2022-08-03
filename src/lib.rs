@@ -1,6 +1,9 @@
 use pyo3::prelude::*;
 
+// Fixed types for elements
 pub type C = u8;
+// Type of vectors of elements *for storage only* - other interfaces can still use Vec<C>
+pub type CVec = Vec<C>;
 
 mod item_sets;
 mod packing_bestfit;

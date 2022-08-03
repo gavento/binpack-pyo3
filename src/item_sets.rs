@@ -1,7 +1,7 @@
 use crate::packing_bestfit::fits_into_bestfit;
 use crate::packing_branching::fits_into_branching;
 use crate::packing_common::{counts_to_sizes, sizes_to_counts};
-use crate::C;
+use crate::{CVec, C};
 use pyo3::prelude::*;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
@@ -12,7 +12,7 @@ use rayon::iter::ParallelIterator;
 #[pyclass]
 #[derive(Debug, Clone, Default)]
 #[pyo3(text_signature = "(all_counts=None, /, all_sizes=None)")]
-pub struct ItemSets(Vec<Vec<C>>);
+pub struct ItemSets(Vec<CVec>);
 
 #[pymethods]
 impl ItemSets {
@@ -59,7 +59,7 @@ impl ItemSets {
         let cs: Vec<C> = counts.extract()?;
         assert!(cs.len() < C::MAX as usize);
         assert!(cs.len() == 0 || cs[0] == 0);
-        self.0.push(cs);
+        self.0.push(cs.into());
         Ok(())
     }
 
@@ -69,12 +69,12 @@ impl ItemSets {
         assert!(ss.len() < C::MAX as usize);
         let cs = sizes_to_counts(&ss);
         assert_eq!(cs[0], 0, "Items of size 0 not allowed.");
-        self.0.push(cs);
+        self.0.push(cs.into());
         Ok(())
     }
 
     pub fn all_counts(&self) -> Vec<Vec<C>> {
-        self.0.clone()
+        self.0.iter().map(|c| c.clone().into()).collect()
     }
 
     pub fn all_sizes(&self) -> Vec<Vec<C>> {
@@ -89,6 +89,7 @@ impl ItemSets {
         self.0
             .get(idx)
             .cloned()
+            .map(|c| c.into())
             .ok_or_else(|| pyo3::exceptions::PyIndexError::new_err("Out of bounds"))
     }
 
