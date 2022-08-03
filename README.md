@@ -71,7 +71,7 @@ print(s.all_counts()) # List all as vectors of counts
 print(s.memory_used()) # Estimate bytes used
 assert s.any_fit_into_given([0,0,0,0,0,1,0,0,1]) == True # 2nd fits into [5,8]
 assert s.all_fit_into_given([0,0,0,0,0,1,0,0,1]) == False # 1st does not fit into [5,8]
-assert s.given_fits_into_how_many(s.s2c([2,3,3,3,1])) == 1 # Counting, with conversion
+assert s.given_fits_into_how_many(s.s2c([2,3,3,3,1])) == 1 # Counting, with conversion from size set to count vector
 ```
 
 ## Benchmark on AMD EPYC 7302
